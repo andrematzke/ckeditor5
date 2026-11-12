@@ -9,11 +9,6 @@
 
 import type { MediaEmbedProvider } from './mediaembedconfig.js';
 
-/**
- * Optional same-origin configuration file. A missing file (HTTP 404) leaves the built-in providers unchanged.
- */
-export const DEFAULT_EXTERNAL_PROVIDERS_PATH = '/ckeditor-media-providers.json';
-
 interface ExternalProviderDefinition {
 	name: string;
 	url: string | Array<string>;
@@ -21,13 +16,15 @@ interface ExternalProviderDefinition {
 }
 
 const PROVIDER_NAME_PATTERN = /^[a-zA-Z][a-zA-Z0-9_-]{0,63}$/;
+const TEMPLATE_REFERENCE_PATTERN = /\$(\d+)/g;
 
 function escapeHtmlAttribute( value: string ): string {
 	return value.replace( /&/g, '&amp;' ).replace( /"/g, '&quot;' ).replace( /</g, '&lt;' ).replace( />/g, '&gt;' );
 }
 
 function compileExternalProvider( definition: ExternalProviderDefinition ): MediaEmbedProvider {
-	if ( !definition || !PROVIDER_NAME_PATTERN.test( definition.name ) || typeof definition.embedUrl !== 'string' ) {
+	if ( !definition || typeof definition.name !== 'string' || !PROVIDER_NAME_PATTERN.test( definition.name ) ||
+		typeof definition.embedUrl !== 'string' ) {
 		throw new Error( 'Invalid external media provider definition.' );
 	}
 
@@ -39,7 +36,7 @@ function compileExternalProvider( definition: ExternalProviderDefinition ): Medi
 	}
 
 	const url = patterns.map( pattern => new RegExp( pattern ) );
-	const templateUrl = new URL( definition.embedUrl.replace( /\$\d+/g, 'example' ) );
+	const templateUrl = new URL( definition.embedUrl.replace( TEMPLATE_REFERENCE_PATTERN, 'example' ) );
 
 	if ( templateUrl.protocol !== 'https:' || templateUrl.username || templateUrl.password ) {
 		throw new Error( 'External media provider embed URL must use HTTPS without credentials.' );
@@ -49,7 +46,7 @@ function compileExternalProvider( definition: ExternalProviderDefinition ): Medi
 		name: definition.name,
 		url,
 		html: match => {
-			const embedUrl = definition.embedUrl.replace( /\$(\d+)/g, ( _, index: string ) => {
+			const embedUrl = definition.embedUrl.replace( TEMPLATE_REFERENCE_PATTERN, ( _, index: string ) => {
 				const captured = match[ Number( index ) ];
 
 				if ( captured === undefined ) {
@@ -87,7 +84,7 @@ function compileExternalProvider( definition: ExternalProviderDefinition ): Medi
  */
 export async function loadExternalMediaProviders(
 	fetcher: typeof fetch,
-	path: string = DEFAULT_EXTERNAL_PROVIDERS_PATH
+	path: string
 ): Promise<Array<MediaEmbedProvider>> {
 	const response = await fetcher( path, { credentials: 'same-origin' } );
 
