@@ -65,7 +65,7 @@ describe( 'MediaEmbedEditing', () => {
 	} );
 
 	describe( 'external provider configuration', () => {
-		it( 'adds externally loaded providers before the editor becomes ready', async () => {
+		it( 'loads providers before editor readiness', async () => {
 			const originalFetch = window.fetch;
 			const fetchMock = vi.fn().mockResolvedValue( {
 				ok: true,
@@ -73,7 +73,7 @@ describe( 'MediaEmbedEditing', () => {
 				json: async () => ( {
 					providers: [ {
 						name: 'exampleVideo',
-						url: '^video\\\\.example\\\\.com/watch/([a-z0-9-]+)		describe( 'configuration', () => {
+						url: '^video\\.example\\.com/watch/([a-z0-9-]+)		describe( 'configuration', () => {
 			describe( '#providers', () => {
 				it( 'should warn when provider has no name', () => {
 					const consoleWarnStub = vi.spyOn( console, 'warn' ).mockImplementation( () => {} );
@@ -1354,7 +1354,7 @@ describe( 'MediaEmbedEditing', () => {
 			}
 		} );
 
-		it( 'does not fetch anything when external providers are not configured', async () => {
+		it( 'does not fetch external providers unless configured', async () => {
 			const originalFetch = window.fetch;
 			const fetchMock = vi.fn();
 			window.fetch = fetchMock;
